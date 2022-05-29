@@ -16,7 +16,7 @@ import argparse  # this package allows for arg parsing
 
 # This is the directory where the torrent files are dumped by the browser
 # TARGET_DIR = "~/Downloads/"
-# with ftplib.FTP(SEEDBOX_ADDR, SEEDBOX_LOGIN, SEEDBOX_PW) as ftp:
+
 #     ftp.dir("watch")
 
 # check local directory for torrent files, and move them to torrentdir
@@ -28,7 +28,15 @@ config = functions.yamlDataExtract()
 
 TORRENT_DIR = config["torrent_dir"]
 TARGET_DIR = config["target_dir"]
+SEEDBOX_ADDR = config["seedbox_addr"]
+SEEDBOX_LOGIN = config["seedbox_login"]
+SEEDBOX_PW = config["seedbox_pw"]
 
+seedbox_ftp = ftplib.FTP(SEEDBOX_ADDR, SEEDBOX_LOGIN, SEEDBOX_PW)
+
+seedbox_ftp.encoding = "utf-8"
+seedbox_ftp.cwd("watch")
+functions.putFile("test.torrent", seedbox_ftp)
 
 # TARGET_DIR, TORRENT_DIR =
 from_torrents = functions.torrentIdentifier(TARGET_DIR)
@@ -47,7 +55,6 @@ else:
 
 for entry in torrents:
     print(f"Found torrent file ::: {entry.name}")
-# TODO diff directories to compare their contents.
 
 
 # TODO check that the files are in the correct format.

@@ -63,3 +63,9 @@ def yamlDataExtract(config_file="config.yaml"):
             return data
         except yaml.YAMLError as exc:
             print(exc)
+
+
+def putFile(filename, ftp):
+    """open file filename and put on ftp server. assumes connection is open."""
+    with open(filename, "rb") as binary:
+        ftp.storbinary(f"STOR {filename}", filename)
