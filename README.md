@@ -1,23 +1,23 @@
 
 # Table of Contents
 
-1.  [torrent2box](#org5c5ca0e)
-    1.  [Introduction](#orgd08bfad)
-    2.  [Disclaimer](#orge728a94)
-    3.  [Installation](#org79515d6)
-    4.  [Configuration](#orgf77b150)
-    5.  [Outstanding tasks](#orge755908)
-        1.  [Local file management](#org54dcc8a)
-        2.  [Seedbox file management](#org57aadce)
+1.  [torrent2box](#orgf501309)
+    1.  [Introduction](#org7d4f9fa)
+    2.  [Disclaimer](#orgf3451ff)
+    3.  [Installation](#org1dde8b1)
+    4.  [Configuration](#org75a3abf)
+    5.  [Outstanding tasks](#orge7c8bfd)
+        1.  [Local file management](#orgc28e1a0)
+        2.  [Seedbox file management](#orge642d23)
 
 
 
-<a id="org5c5ca0e"></a>
+<a id="orgf501309"></a>
 
 # torrent2box
 
 
-<a id="orgd08bfad"></a>
+<a id="org7d4f9fa"></a>
 
 ## Introduction
 
@@ -29,34 +29,34 @@ for `.torrent` files and SFTP them into a seedbox. Then, when that file has been
 downloaded, get it back from the seedbox.
 
 
-<a id="orge728a94"></a>
+<a id="orgf3451ff"></a>
 
 ## Disclaimer
 
 This currently **does not work**.
 
 
-<a id="org79515d6"></a>
+<a id="org1dde8b1"></a>
 
-## TODO Installation
+## Installation
 
 Don&rsquo;t bother: Currently not functioning. Just made it public to motivate myself to finish the
 damn thing.
 
 
-<a id="orgf77b150"></a>
+<a id="org75a3abf"></a>
 
 ## Configuration
 
-Fill out the config<sub>example.yaml</sub> file, and rename it to config.yaml.
+Fill out the `config\_example.yaml` file, and rename it to config.yaml.
 
 
-<a id="orge755908"></a>
+<a id="orge7c8bfd"></a>
 
 ## Outstanding tasks
 
 
-<a id="org54dcc8a"></a>
+<a id="orgc28e1a0"></a>
 
 ### Local file management
 
@@ -67,7 +67,7 @@ Fill out the config<sub>example.yaml</sub> file, and rename it to config.yaml.
 3.  TODO place downloaded file in correct location
 
 
-<a id="org57aadce"></a>
+<a id="orge642d23"></a>
 
 ### Seedbox file management
 
