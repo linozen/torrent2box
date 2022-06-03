@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import ftplib  # this package allows for ftp login.
-import shutil
 import functions
-import argparse  # this package allows for arg parsing
-import ftplib
-
 import connectionhandler
 
-# import pysftp
-
-# TODO first, get name of From folder and Too folder
-# argv = sys.argv
 
 # Handle the config file
 config = functions.yamlDataExtract()
@@ -24,23 +13,12 @@ SEEDBOX_ADDR = config["seedbox_addr"]
 SEEDBOX_LOGIN = config["seedbox_login"]
 SEEDBOX_PW = config["seedbox_pw"]
 
-# fileObject = open(
-#     "Eric Dolphy - Iron Man - 1971 (Vinyl - FLAC - 24bit Lossless)-1671921.torrent",
-#     "rb",
-# )
-# file2BeSavedAs = (
-#     "Eric Dolphy - Iron Man - 1971 (Vinyl - FLAC - 24bit Lossless)-1671921.torrent"
-# )
-
-# sys.exit("SCRIPT TERMINATED BY BREAKER")
-# TARGET_DIR, TORRENT_DIR =
-from_torrents = functions.torrentIdentifier(TARGET_DIR)
-to_torrents = functions.torrentIdentifier(TORRENT_DIR)
 
 # create list of torrent files present in from_torrents, not present in to_torrents
-torrents = functions.getDiffList(from_torrents, to_torrents)
+torrents = functions.getTorrentDiffList(TORRENT_DIR, TARGET_DIR)
 
 num_torrents = len(torrents)
+
 if num_torrents > 0:
     print(f"Found {num_torrents} new torrents")
     functions.moveManager(torrents, TORRENT_DIR)
@@ -61,8 +39,7 @@ sftp.connect()
 sftp.changeWorkingDirectory(remotePath="watch")
 
 # loop through torrent list, and send them to the seedbox
-# for torrent in torrents:
-#     sftp.testUpload(torrent)
-print(os.getcwd())
+for torrent in torrents:
+    sftp.testUpload(torrent)
 # disconnect
 sftp.disconnect()

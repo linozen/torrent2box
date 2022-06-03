@@ -14,23 +14,23 @@ def checkMimes(file, allowed_extensions):
     return file_valid
 
 
-def handleLocalTorrents(torrent_dir, initial_dir, move_file=False):
-    """move .torrent files to initial_dir"""
-    torrents_found = 0
+# def handleLocalTorrents(torrent_dir, initial_dir, move_file=False):
+#     """move .torrent files to initial_dir"""
+#     torrents_found = 0
 
-    with os.scandir(initial_dir) as localdir:
-        for entry in localdir:
-            # check if file is correct type
-            if entry.is_file() and checkMimes(entry, ".torrent"):
-                print(f"Found torrent file ::: {entry.name}")
-                torrents_found += 1
-                if move_file:
-                    shutil.move(entry, torrent_dir)
-                    print(f"Moved to {torrent_dir}")
-        if torrents_found == 0:
-            print(f"No torrent files found to process in {initial_dir}")
-        else:
-            print(f"proceesed {os.path(initial_dir)}")
+#     with os.scandir(initial_dir) as localdir:
+#         for entry in localdir:
+#             # check if file is correct type
+#             if entry.is_file() and checkMimes(entry, ".torrent"):
+#                 print(f"Found torrent file ::: {entry.name}")
+#                 torrents_found += 1
+#                 if move_file:
+#                     shutil.move(entry, torrent_dir)
+#                     print(f"Moved to {torrent_dir}")
+#         if torrents_found == 0:
+#             print(f"No torrent files found to process in {initial_dir}")
+#         else:
+#             print(f"proceesed {os.path(initial_dir)}")
 
 
 def torrentIdentifier(directory):
@@ -56,7 +56,6 @@ def moveManager(torrents, torrent_dir):
 
 
 def yamlDataExtract(config_file="config.yaml"):
-
     with open("config.yaml", "r") as config:
         try:
             data = yaml.safe_load(config)
@@ -65,7 +64,9 @@ def yamlDataExtract(config_file="config.yaml"):
             print(exc)
 
 
-def putFile(filename, ftp):
-    """open file filename and put on ftp server. assumes connection is open."""
-    with open(filename, "rb") as binary:
-        ftp.storbinary(f"STOR {filename}", filename)
+def getTorrentDiffList(torrent_dir, target_dir):
+    """return a list of all the torrents in torrent_dir not present in target_dir"""
+    torrents = getDiffList(
+        torrentIdentifier(torrent_dir), torrentIdentifier(target_dir)
+    )
+    return torrents
