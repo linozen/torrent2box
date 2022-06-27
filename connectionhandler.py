@@ -3,6 +3,8 @@ import ftplib
 from pathlib import Path
 import os
 import sys
+import re
+import time
 
 ###############################################################################
 # https://sftptogo.com/blog/python-sftp/                                       #
@@ -55,46 +57,128 @@ class SeedboxFTP:
         print(ftpResponseMessage)
         fileObject.close()
 
-    def testDownload(self, remoteFile):
-        """Download file to location of execution. this needs to be amended to allow for choice of location."""
-        fileObject = open(remoteFile, "wb")
-        ftpcommand = "RETR %s" % remoteFile
-        ftpResponseMessage = self.connection.retrbinary(ftpcommand, fileObject.write)
-        print(ftpResponseMessage)
-        fileObject.close()
+    # def testDownload(self, remoteFile):
+    #     """Download file to location of execution. this needs to be amended to allow for choice of location."""
+    #     fileObject = open(remoteFile, "wb")
+    #     ftpcommand = "RETR %s" % remoteFile
+    #     ftpResponseMessage = self.connection.retrbinary(ftpcommand, fileObject.write)
+    #     print(ftpResponseMessage)
+    #     fileObject.close()
 
-    def downloadFiles(self, path, destination):
-        # path & destination are str of the form "/dir/folder/something/"
-        # path should be the abs path to the root FOLDER of the file tree to download
+    def isFtpDir(self, name, guess_by_extension=True):
+        """simply determines if an item listed on the ftp server is a valid directory or not"""
+
+        # if the name has a "." in the fourth or fifth to last position, its probably a file extension
+        # this is MUCH faster than trying to set every file to a working directory, and will work 99% of time.
+        # if guess_by_extension is True:
+        #     if len(name) >= 4:
+        #         if name[-4] or name[-5] == ".":
+        #             return False
+        if guess_by_extension is True:
+            if os.path.splitext(name) == "":
+                return True
+
+        original_cwd = self.connection.pwd()  # remember the current working directory
         try:
-            self.connection.cwd(path)
-            # clone path to destination
-            os.chdir(destination)
-            os.mkdir(destination[0 : len(destination) - 1] + path)
-            print(destination[0 : len(destination) - 1] + path + " built")
-        except OSError:
-            # folder already exists at destination
-            pass
-        except ftplib.error_perm:
-            # invalid entry (ensure input form: "/dir/folder/something/")
-            print("error: could not change to " + path)
-            sys.exit("ending session")
+            self.connection.cwd(name)  # try to set directory to new name
+            self.connection.cwd(original_cwd)  # set it back to what it was
+            return True
 
-        # list children:
-        filelist = self.connection.nlst()
+        except ftplib.error_perm as e:
+            print(e)
+            return False
 
-        for file in filelist:
+        except Exception as e:
+            print(e)
+            return False
+
+    def makeParentDir(self, fpath):
+        """ensures the parent directory of a filepath exists"""
+        dirname = os.path.dirname(fpath)
+        print(f"Trying to create a directory called: {fpath}")
+        print(f"Trying to create a directory called: {dirname}")
+
+        while not os.path.exists(dirname) or dirname == "":
             try:
-                # this will check if file is folder:
-                self.connection.cwd(path + file + "/")
-                # if so, explore it:
-                downloadFiles(path + file + "/", destination)
-            except ftplib.error_perm:
-                # not a folder with accessible content
-                # download & return
-                os.chdir(destination[0 : len(destination) - 1] + path)
-                # possibly need a permission exception catch:
-                with open(os.path.join(destination, file), "wb") as f:
-                    self.connection.retrbinary("RETR " + file, f.write)
-                print(file + " downloaded")
-        return
+                os.makedirs(fpath)
+                print("created {0}".format(dirname))
+            except FileNotFoundError as error:
+                print(f"file not found.trying to create {dirname}")
+                time.sleep(1)
+
+                # self.makeParentDir(dirname)
+            except OSError as e:
+                print(e)
+                self.makeParentDir(fpath)
+
+    def downloadRemoteFile(self, name, dest, overwrite):
+        """downloads a single file from an ftp server"""
+        self.makeParentDir(dest.lstrip("/"))
+        if not os.path.exists(dest) or overwrite is True:
+            try:
+                with open(dest, "wb") as f:
+                    self.connection.retrbinary("RETR {0}".format(name), f.write)
+                print("downloaded: {0}".format(dest))
+            except FileNotFoundError:
+                print("FAILED: {0}".format(dest))
+        else:
+            print("already exists: {0}".format(dest))
+
+    def fileNameMatchPattern(self, pattern, name):
+        """returns True if filename matches the pattern"""
+        if pattern is None:
+            return True
+        else:
+            return bool(re.match(pattern, name))
+
+    def cloneRemoteDir(self, name, overwrite, guess_by_extension, pattern):
+        """replicates a directory on an ftp server recursively"""
+        for item in self.connection.nlst(name):
+            print("I am processing", item)
+            if self.isFtpDir(item, guess_by_extension):
+                print("I think this is a dir")
+                self.cloneRemoteDir(item, overwrite, guess_by_extension, pattern)
+                print("cloning remote dir")
+            else:
+                print("I think this is a file")
+                if self.fileNameMatchPattern(pattern, name):
+                    self.downloadRemoteFile(item, item, overwrite)
+                else:
+                    print("I have skipped this")
+                    # quietly skip the file
+                    pass
+
+    def downloadRemoteDir(
+        self,
+        path,
+        destination,
+        pattern=None,
+        overwrite=False,
+        guess_by_extension=True,
+    ):
+        """
+        Downloads an entire directory tree from an ftp server to the local destination
+        :param path: the folder on the ftp server to download
+        :param destination: the local directory to store the copied folder
+        :param pattern: Python regex pattern, only files that match this pattern will be downloaded.
+        :param overwrite: set to True to force re-download of all files, even if they appear to exist already
+        :param guess_by_extension: It takes a while to explicitly check if every item is a directory or a file.
+            if this flag is set to True, it will assume any file ending with a three character extension ".???" is
+            a file and not a directory. Set to False if some folders may have a "." in their names -4th position.
+        """
+        path = path.lstrip("/")
+        original_directory = (
+            os.getcwd()
+        )  # remember working directory before function is executed
+        os.chdir(destination)  # change working directory to ftp mirror directory
+
+        self.cloneRemoteDir(
+            path,
+            pattern=pattern,
+            overwrite=overwrite,
+            guess_by_extension=guess_by_extension,
+        )
+
+        os.chdir(
+            original_directory
+        )  # reset working directory to what it was before function exec
