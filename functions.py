@@ -25,9 +25,6 @@ def checkIfFolder(path):
     return is_Folder
 
 
-print(checkIfFolder("/home/weast/Downloads/cover"))
-
-
 def torrentIdentifier(directory):
     torrents = []
     with os.scandir(directory) as localdir:
@@ -45,11 +42,11 @@ def getDiffList(a, b):
     return difflist
 
 
-# Todo: handle file already exists
+# TODO: handle file already exists
 def moveManager(torrents, torrent_dir):
     for torrent in torrents:
         try:
-            shutil.move(torrent, torrent_dir)
+            shutil.move(torrent.path, torrent_dir)
         except Exception as e:
             raise Exception(e)
 
@@ -162,17 +159,6 @@ def download_ftp_tree(
     overwrite=False,
     guess_by_extension=True,
 ):
-    """
-    Downloads an entire directory tree from an ftp server to the local destination
-    :param ftp_handle: an authenticated ftplib.FTP instance
-    :param path: the folder on the ftp server to download
-    :param destination: the local directory to store the copied folder
-    :param pattern: Python regex pattern, only files that match this pattern will be downloaded.
-    :param overwrite: set to True to force re-download of all files, even if they appear to exist already
-    :param guess_by_extension: It takes a while to explicitly check if every item is a directory or a file.
-        if this flag is set to True, it will assume any file ending with a three character extension ".???" is
-        a file and not a directory. Set to False if some folders may have a "." in their names -4th position.
-    """
     path = path.lstrip("/")
     original_directory = (
         os.getcwd()

@@ -5,9 +5,6 @@ import argparse
 import functions
 import connectionhandler
 
-# from time import sleep
-
-
 # handle argument parsing
 parser = argparse.ArgumentParser(
     description="This tool finds .torrent files in your download folder\
@@ -35,12 +32,12 @@ parser.add_argument(
     action="store_true",
     help="move files in inbound folder to outbound torrent folder",
 )  # move torrent files locally
-parser.add_argument(
-    "--download",
-    "-d",
-    action="store_true",
-    help="Download torrents from seedbox.io to the specified folder.",
-)  # download torrents
+# parser.add_argument(
+#     "--download",
+#     "-d",
+#     action="store_true",
+#     help="Download torrents from seedbox.io to the specified folder.",
+# )  # download torrents
 args = parser.parse_args()
 
 

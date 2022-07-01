@@ -5,4 +5,4 @@ let
     python-packages.libtorrent-rasterbar
   ];
   my-python = python37.withPackages my-python-packages;
-in mkShell { buildInputs = [ bashInteractive my-python ]; }
+in mkShell { buildInputs = [ bashInteractive my-python libressl ]; }
