@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 import ftplib
-from pathlib import Path
 import os
-import sys
 import re
-import time
-
-###############################################################################
-# https://sftptogo.com/blog/python-sftp/                                       #
-###############################################################################
+from functions import getDiffList
 
 
 class SeedboxFTP:
@@ -45,10 +39,22 @@ class SeedboxFTP:
     def printWorkingDirectory(self):
         self.connection.dir()
 
+    def nlstSafe(self, directory):
+        """
+        creates a directory tree for all directories and file in directory.
+        Note that this replaces the nlst() command in the ftplib, because this
+        was not able to parse square brackets, and the ftp server could not handle
+        escaped strings, for whatever reason. this function basically mimics nlst()
+        """
+        out = []
+        for i in self.connection.mlsd(directory):
+            out.append(os.path.join(directory, i[0]))
+        return out
+
     # This is the upload function. Very unstable as it stands, and has no proper error handling.
     # The issue I am having is that there is a both a list of posix files (localFile) and the directory
     # in which those files are to be found. it seems odd to set both. Ideally you just feed it the main file.
-
+    # TODO rename this!!!!
     def testUpload(self, localFile):
         fileObject = open(localFile, "rb")
         file2BeSavedAs = localFile.name
@@ -57,26 +63,19 @@ class SeedboxFTP:
         print(ftpResponseMessage)
         fileObject.close()
 
-    # def testDownload(self, remoteFile):
-    #     """Download file to location of execution. this needs to be amended to allow for choice of location."""
-    #     fileObject = open(remoteFile, "wb")
-    #     ftpcommand = "RETR %s" % remoteFile
-    #     ftpResponseMessage = self.connection.retrbinary(ftpcommand, fileObject.write)
-    #     print(ftpResponseMessage)
-    #     fileObject.close()
+    def checkTorrentDownloaded(self, ftpdirectory, torrents):
+        remote = self.nlstSafe(ftpdirectory)
+        return getDiffList(torrents, remote)
 
     def isFtpDir(self, name, guess_by_extension=True):
         """simply determines if an item listed on the ftp server is a valid directory or not"""
 
         # if the name has a "." in the fourth or fifth to last position, its probably a file extension
         # this is MUCH faster than trying to set every file to a working directory, and will work 99% of time.
-        # if guess_by_extension is True:
-        #     if len(name) >= 4:
-        #         if name[-4] or name[-5] == ".":
-        #             return False
         if guess_by_extension is True:
-            if os.path.splitext(name) == "":
-                return True
+            if len(name) >= 4:
+                if name[-4] == ".":
+                    return False
 
         original_cwd = self.connection.pwd()  # remember the current working directory
         try:
@@ -95,21 +94,13 @@ class SeedboxFTP:
     def makeParentDir(self, fpath):
         """ensures the parent directory of a filepath exists"""
         dirname = os.path.dirname(fpath)
-        print(f"Trying to create a directory called: {fpath}")
-        print(f"Trying to create a directory called: {dirname}")
-
-        while not os.path.exists(dirname) or dirname == "":
+        while not os.path.exists(dirname):
             try:
-                os.makedirs(fpath)
-                print("created {0}".format(dirname))
-            except FileNotFoundError as error:
-                print(f"file not found.trying to create {dirname}")
-                time.sleep(1)
-
-                # self.makeParentDir(dirname)
+                os.makedirs(dirname)
+                print("created directory {0}".format(dirname))
             except OSError as e:
                 print(e)
-                self.makeParentDir(fpath)
+                self.makeParentDir(dirname)
 
     def downloadRemoteFile(self, name, dest, overwrite):
         """downloads a single file from an ftp server"""
@@ -133,19 +124,14 @@ class SeedboxFTP:
 
     def cloneRemoteDir(self, name, overwrite, guess_by_extension, pattern):
         """replicates a directory on an ftp server recursively"""
-        for item in self.connection.nlst(name):
-            print("I am processing", item)
+
+        for item in self.nlstSafe(name):
             if self.isFtpDir(item, guess_by_extension):
-                print("I think this is a dir")
                 self.cloneRemoteDir(item, overwrite, guess_by_extension, pattern)
-                print("cloning remote dir")
             else:
-                print("I think this is a file")
                 if self.fileNameMatchPattern(pattern, name):
                     self.downloadRemoteFile(item, item, overwrite)
                 else:
-                    print("I have skipped this")
-                    # quietly skip the file
                     pass
 
     def downloadRemoteDir(

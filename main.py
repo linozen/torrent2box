@@ -64,12 +64,14 @@ if __name__ == "__main__":
         for entry in torrents:
             print(f"Found torrent file ::: {entry.name}")
 
-    if args.upload is True:
+    if args.upload or args.download is True:
 
         sftp = connectionhandler.SeedboxFTP(SEEDBOX_ADDR, SEEDBOX_LOGIN, SEEDBOX_PW)
 
         print(f"attempting to connect to {SEEDBOX_ADDR}")
         sftp.connect()
+
+    if args.upload is True:
 
         print(f"attempting to upload {num_torrents} to {SEEDBOX_ADDR}.")
         # set CWD to Watch folder
@@ -78,22 +80,25 @@ if __name__ == "__main__":
         # loop through torrent list, and send them to the seedbox
         for torrent in torrents:
             sftp.testUpload(torrent)
-        # disconnect
-        sftp.disconnect()
 
-    # if args.download is True:
+    if args.download is True:
+        sftp.changeWorkingDirectory(remotePath="/files/")
 
-    #     sftp.changeWorkingDirectory(remotePath="/files/Completed Downloads")
-
-    #     for torrent in torrents:
-    #         torrentfile = functions.getFileNamefromTorrent(torrent)
-    #         print(f"processing {torrentfile}")
-    #         sftp.downloadRemoteDir(
-    #             torrentfile,
-    #             destination=TARGET_DIR,
-    #         )
-    #     sftp.disconnect()
+        for torrent in torrents:
+            torrentfile = functions.getFileNamefromTorrent(torrent)
+            print(f"processing {torrentfile}")
+            sftp.downloadRemoteDir(
+                torrentfile,
+                destination=TARGET_DIR,
+            )
 
     if args.move is True:
         print(f"moving torrents to {TORRENT_DIR}")
         functions.moveManager(torrents, TORRENT_DIR)
+
+# this just sees if an ftp instance was created, and if it does exist, disconnects.
+try:
+    sftp.disconnect()
+    print("disconnected successfully.")
+except NameError:
+    pass

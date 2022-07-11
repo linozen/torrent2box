@@ -48,10 +48,13 @@ def getDiffList(a, b):
 def moveManager(torrents, torrent_dir):
     """move files (expects posix) from target directory to torrent directory"""
     for torrent in torrents:
-        try:
-            shutil.move(torrent.path, torrent_dir)
-        except Exception as e:
-            raise Exception(e)
+        if not os.path.exists(torrent):
+            try:
+                shutil.move(torrent.path, torrent_dir)
+            except Exception as e:
+                raise Exception(e)
+        else:
+            print(f"already exists: {torrent}")
 
 
 def yamlDataExtract(config_file="config.yaml"):
